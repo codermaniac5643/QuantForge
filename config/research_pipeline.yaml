@@ -1,0 +1,37 @@
+# config/research_pipeline.yaml
+
+discovery:
+  # How many results to fetch per search term per source
+  results_per_term: 50
+  # Date window for initial discovery (days back from today)
+  lookback_days: 365
+  # Delay between API requests (seconds) to respect rate limits
+  request_delay_seconds: 1.0
+  # Max retries on transient failures
+  max_retries: 3
+  # Request timeout (seconds)
+  timeout_seconds: 30
+
+filtering:
+  # Minimum score (0.0 - 1.0) for a paper to be considered a candidate
+  min_relevance_score: 0.3
+  # Minimum combined score to be eligible for acquisition
+  min_acquisition_score: 0.5
+
+acquisition:
+  # Hard limits to control costs and storage
+  max_papers_per_week: 20
+  max_papers_per_month: 50
+  # Whether papers need manual approval before downloading
+  # auto | manual
+  approval_mode: manual
+  # Where downloaded papers are stored
+  storage_path: research_library
+  # Max PDF file size to accept (MB)
+  max_pdf_size_mb: 50
+
+processing:
+  # Whether to attempt section extraction (slower but richer)
+  extract_sections: true
+  # Whether to extract tables
+  extract_tables: false

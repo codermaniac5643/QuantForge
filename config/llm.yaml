@@ -1,0 +1,37 @@
+# config/llm.yaml
+
+provider:
+  name: openrouter
+  model: anthropic/claude-3-haiku
+  base_url: https://openrouter.ai/api/v1
+
+# Master switch — set false to disable all LLM calls (use deterministic scoring only)
+enabled: true
+
+limits:
+  # Token limits per request
+  max_input_tokens: 8000
+  max_output_tokens: 1000
+
+  # Per-paper call cap (prevents runaway costs on one paper)
+  max_calls_per_paper: 3
+
+  # Concurrency — how many LLM requests can run simultaneously
+  max_concurrent_requests: 2
+
+  # Retry limit on provider errors
+  max_retries: 2
+
+budget:
+  # Hard stop when this USD amount is reached
+  max_spend_usd: 5
+  # Warn when this threshold is crossed
+  warn_at_usd: 3
+  # Never auto-recharge or auto-increase the limit
+  auto_recharge: false
+
+tasks:
+ 
+  relevance_evaluation: true
+  credibility_evaluation: false   
+  section_extraction: false      

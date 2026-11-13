@@ -1,0 +1,29 @@
+# .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Secrets
+.env
+
+# Test & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local data (never commit papers or logs)
+research_library/
+logs/
+
+# OS
+.DS_Store
