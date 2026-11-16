@@ -1,8 +1,9 @@
 # src/quantforge/config/loader.py
 
+import json
 from pathlib import Path
 from typing import Any
-import yaml
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -106,23 +107,23 @@ class LLMConfig(BaseModel):
 
 # --- Loader ---
 
-def _load_yaml(path: Path) -> dict[str, Any]:
+def _load_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"Config file not found: {path}")
     with path.open("r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        return json.load(f)
 
 
 def load_research_topics(config_dir: Path) -> ResearchTopicsConfig:
-    data = _load_yaml(config_dir / "research_topics.yaml")
+    data = _load_json(config_dir / "research_topics.json")
     return ResearchTopicsConfig(**data)
 
 
 def load_pipeline_config(config_dir: Path) -> ResearchPipelineConfig:
-    data = _load_yaml(config_dir / "research_pipeline.yaml")
+    data = _load_json(config_dir / "research_pipeline.json")
     return ResearchPipelineConfig(**data)
 
 
 def load_llm_config(config_dir: Path) -> LLMConfig:
-    data = _load_yaml(config_dir / "llm.yaml")
+    data = _load_json(config_dir / "llm.json")
     return LLMConfig(**data)

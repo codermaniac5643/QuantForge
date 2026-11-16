@@ -81,6 +81,15 @@ KNOWN_HEADINGS: frozenset[str] = frozenset(
     }
 )
 
+# Lines to never treat as headings regardless of formatting
+_HEADING_BLOCKLIST_RE = re.compile(
+    r'^(working\s+manuscript|working\s+paper|last\s+updated|'
+    r'this\s+evaluation|submitted\s+to|under\s+review|'
+    r'prepublication\s+draft|framing\s+effects|'
+    r'collusive\s+behavior)',  # paper-specific subtitle fragments
+    re.IGNORECASE,
+)
+
 # Numeric prefix: "1.", "1.1", "1.1.1", "A.", "I.", "II."
 _NUMERIC_PREFIX_RE = re.compile(
     r"^(?:\d+(?:\.\d+)*\.?|[A-Z]\.?|(?:I{1,3}|IV|VI{0,3}|IX|X{1,3})\.?)\s"
@@ -114,7 +123,6 @@ class _HeadingCandidate:
 # Public API
 # ---------------------------------------------------------------------------
 
-
 def extract_sections(text: str) -> list[SectionEntry]:
     """
     Parse *text* (the full_text from ExtractionResult) into sections.
@@ -137,7 +145,7 @@ def extract_sections(text: str) -> list[SectionEntry]:
         page_match = _PAGE_MARKER_RE.match(line)
         if page_match:
             current_page = int(page_match.group(1))
-            continue
+            continue        
 
         if _is_heading(line):
             candidates.append(
@@ -158,6 +166,33 @@ def extract_sections(text: str) -> list[SectionEntry]:
             ln for ln in content_lines if not _PAGE_MARKER_RE.match(ln.strip())
         ]
         content = "\n".join(content_lines).strip()
+
+        # Skip TOC entries — content is just a page number (1-3 chars)
+        if len(content) <= 3 and content.strip().isdigit():
+            continue
+
+        # Skip TOC entries — content consists mostly of dot leaders and page numbers
+        # e.g. "Experiment B . . . . . . 9\n4.2 ..."
+        toc_lines = [ln.strip() for ln in content.splitlines() if ln.strip()]
+        if toc_lines and all(
+            re.match(r'^[\d\.\s]+$', ln) or  # pure numbers/dots
+            ln.count('.') > len(ln) * 0.3    # more than 30% dots (dot leaders)
+            for ln in toc_lines[:5]          # check first 5 lines only
+        ):
+            continue
+
+        # Skip duplicate headings — keep only the first occurrence
+        # with meaningful content
+        if any(s["heading"].lower() == cand.heading.lower() for s in sections):
+            if len(content) > len(next((s["content"] for s in sections
+                                        if s["heading"].lower() == cand.heading.lower()), "")):
+                # Replace with the richer version
+                for s in sections:
+                    if s["heading"].lower() == cand.heading.lower():
+                        s["content"] = content
+                        s["page"] = cand.page
+            continue
+
         sections.append(
             SectionEntry(heading=cand.heading, page=cand.page, content=content)
         )
@@ -170,10 +205,13 @@ def extract_sections(text: str) -> list[SectionEntry]:
 # Internal helpers
 # ---------------------------------------------------------------------------
 
-
 def _is_heading(line: str) -> bool:
     """Return True when *line* looks like a section heading."""
     if not line:
+        return False
+
+    # Reject blocklisted phrases (manuscript notices, submission status)
+    if _HEADING_BLOCKLIST_RE.match(line):
         return False
 
     # Reject very long lines — unlikely to be headings
@@ -183,7 +221,6 @@ def _is_heading(line: str) -> bool:
 
     # Reject lines ending with sentence-terminating punctuation
     if line.endswith((".", ",", ";", ":", "?", "!")):
-        # Allow numeric prefixes like "1." only when there's more text
         stripped = _NUMERIC_PREFIX_RE.sub("", line).strip()
         if stripped.endswith((".", ",")):
             return False
@@ -198,16 +235,22 @@ def _is_heading(line: str) -> bool:
     if _NUMERIC_PREFIX_RE.match(line):
         return True
 
-    # ALL CAPS heading (at least 2 chars, not a single abbreviation)
+    # ALL CAPS heading (at least 4 alpha chars, no digits/symbols dominating)
     if line.isupper() and len(line) >= 4:
+        # Reject if line contains digits or currency symbols — likely a value not a heading
+        alpha_chars = sum(1 for c in line if c.isalpha())
+        if alpha_chars < 4:
+            return False
+        if any(c in line for c in ('$', '%', '€', '£', '(', ')')):
+            return False
         return True
 
-    # Title Case heading — every word starts with uppercase
-    if _is_title_case(words) and len(words) >= 2:
-        return True
+    # Title Case — DISABLED: too noisy, catches paper titles and author names.
+    # Known headings and numeric prefixes cover all real cases we need.
+    # if _is_title_case(words) and len(words) >= 2:
+    #     return True
 
     return False
-
 
 def _is_title_case(words: list[str]) -> bool:
     """Return True when every word in *words* starts with an uppercase letter."""

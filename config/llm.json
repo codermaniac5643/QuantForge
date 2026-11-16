@@ -1,0 +1,25 @@
+{
+  "provider": {
+    "name": "openrouter",
+    "model": "anthropic/claude-3-haiku",
+    "base_url": "https://openrouter.ai/api/v1"
+  },
+  "enabled": true,
+  "limits": {
+    "max_input_tokens": 8000,
+    "max_output_tokens": 1000,
+    "max_calls_per_paper": 3,
+    "max_concurrent_requests": 2,
+    "max_retries": 2
+  },
+  "budget": {
+    "max_spend_usd": 5,
+    "warn_at_usd": 3,
+    "auto_recharge": false
+  },
+  "tasks": {
+    "relevance_evaluation": true,
+    "credibility_evaluation": false,
+    "section_extraction": false
+  }
+}

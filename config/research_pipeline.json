@@ -1,0 +1,24 @@
+{
+  "discovery": {
+    "results_per_term": 50,
+    "lookback_days": 365,
+    "request_delay_seconds": 1.0,
+    "max_retries": 3,
+    "timeout_seconds": 30
+  },
+  "filtering": {
+    "min_relevance_score": 0.3,
+    "min_acquisition_score": 0.5
+  },
+  "acquisition": {
+    "max_papers_per_week": 20,
+    "max_papers_per_month": 50,
+    "approval_mode": "manual",
+    "storage_path": "research_library",
+    "max_pdf_size_mb": 50
+  },
+  "processing": {
+    "extract_sections": true,
+    "extract_tables": false
+  }
+}

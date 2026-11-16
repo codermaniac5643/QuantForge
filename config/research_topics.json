@@ -1,0 +1,46 @@
+{
+  "topics": [
+    {
+      "name": "market_breadth",
+      "description": "Market breadth indicators and regime detection",
+      "search_terms": [
+        "market breadth analysis",
+        "advance decline line",
+        "market regime detection",
+        "bull bear market indicator"
+      ],
+      "categories": [
+        "market microstructure",
+        "technical analysis"
+      ]
+    },
+    {
+      "name": "mean_reversion",
+      "description": "Mean reversion and statistical arbitrage strategies",
+      "search_terms": [
+        "mean reversion equity",
+        "statistical arbitrage",
+        "pairs trading",
+        "short term reversal"
+      ],
+      "categories": [
+        "quantitative finance",
+        "statistical arbitrage"
+      ]
+    },
+    {
+      "name": "position_sizing",
+      "description": "Position sizing and risk management methods",
+      "search_terms": [
+        "position sizing strategy",
+        "kelly criterion trading",
+        "volatility based position sizing",
+        "risk management trading"
+      ],
+      "categories": [
+        "portfolio management",
+        "risk management"
+      ]
+    }
+  ]
+}
