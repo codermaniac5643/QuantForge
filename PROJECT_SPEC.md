@@ -1,7 +1,7 @@
 # QuantForge — Project Specification
 
 **Document:** `PROJECT_SPEC.md`  
-**Status:** Initial specification — Research phase  
+**Status:** Active — Strategy Engineering phase  
 **Project name:** QuantForge  
 **Tagline:** Quantitative Research & Strategy Engineering Platform
 
@@ -503,9 +503,9 @@ A future dashboard may provide:
 
 ---
 
-## 6. Initial Research Phase — Scope and Completion Criteria
+## 6. Research Phase — Scope and Completion Criteria ✓ COMPLETE
 
-The first implementation phase is the research pipeline. Strategy extraction, backtesting, paper trading, and live deployment will be specified in later phases.
+The research pipeline phase is complete as of November 2026. All exit criteria were met and verified. See `PHASE_GATE.md` for the full sign-off record.
 
 ### 6.1 Initial Research Phase Deliverables
 
@@ -543,13 +543,20 @@ The research phase should be considered complete when:
 
 ---
 
-## 7. Later Phases — Deliberately Not Specified Yet
+## 7. Later Phases
 
-QuantForge will be developed incrementally. The following phases are expected but are **not fully specified in this initial document**:
+QuantForge is developed incrementally. Phases are specified when the prior phase is complete and requirements are clarified.
 
-- Strategy methodology extraction and structured strategy specifications.
-- Strategy completeness checks and rule provenance.
-- Strategy implementation and versioning.
+### Phase 2 — Strategy Engineering (Current)
+
+Specified and in progress. See `ROADMAP_STRATEGY_ENGINEERING.md` and `STRATEGY_SCHEMA.md`.
+
+Scope: Extract structured Strategy Specifications from Research Document Packages using a three-call LLM extraction pipeline. Produce provenance-tracked, human-reviewed specs ready for backtesting.
+
+### Phase 3 and Beyond — Not Yet Specified
+
+The following phases are expected but not yet specified. They will be planned after Strategy Engineering is complete:
+
 - Market and instrument data ingestion.
 - Backtesting engine and realistic execution assumptions.
 - Risk, position, and portfolio simulation.
@@ -557,10 +564,9 @@ QuantForge will be developed incrementally. The following phases are expected bu
 - Strategy comparison and research reports.
 - Paper trading.
 - Controlled live deployment and operational safeguards.
-- Dashboard.
-- MCP tool exposure and agent workflows.
+- Dashboard and MCP tool exposure (after all core phases are stable).
 
-These phases should be added to `PROJECT_SPEC.md` as their requirements are clarified and agreed upon. The initial research phase should remain focused and should not prematurely implement later-stage functionality.
+Each phase will be added to this document and given its own roadmap when its requirements are clarified. No phase should prematurely implement functionality belonging to a later phase.
 
 ---
 
@@ -585,6 +591,7 @@ These supporting documents should complement—not contradict—this specificati
 ## 9. Current Project Status
 
 - **Project:** QuantForge
-- **Current phase:** Research discovery, evaluation, acquisition, and document processing
-- **Specification status:** Initial draft established
-- **Next implementation focus:** Refine the research-phase requirements and define the repository structure, configuration, database schema, and development milestones before implementation.
+- **Current phase:** Strategy Engineering (Phase 2)
+- **Research phase:** Complete — 511 tests passing, all exit criteria met (November 2026)
+- **Strategy Engineering:** Roadmap and schema defined, Milestone 12 starting
+- **Next implementation focus:** Strategy data models, database migration, and the three-call LLM extraction pipeline.

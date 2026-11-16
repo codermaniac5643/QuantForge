@@ -629,7 +629,7 @@ A milestone is complete only when its deliverables exist, its exit criteria are 
 
 - [x] Project intent and initial research scope captured in `PROJECT_SPEC.md`.
 - [x] Initial research-phase roadmap drafted.
-- [ ] Repository foundation implemented.
+- [x] Repository foundation implemented.
 - [ ] Configuration and metadata models implemented.
 - [ ] Database schema implemented.
 - [ ] Research pipeline implemented.

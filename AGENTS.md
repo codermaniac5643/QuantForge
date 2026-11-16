@@ -3,7 +3,7 @@
 **Document:** `AGENTS.md`  
 **Project:** QuantForge  
 **Applies to:** All coding agents working in this repository  
-**Current implementation scope:** Research phase only
+**Current implementation scope:** Strategy Engineering phase (Phase 2)
 
 ---
 
@@ -18,43 +18,40 @@ Before planning or modifying code, read:
 
 Do not assume that a task mentioned in a future phase is currently authorized for implementation.
 
-## 2. Current Scope: Research Phase Only
+## 2. Current Scope: Strategy Engineering Phase
 
-QuantForge is being implemented incrementally. **The current scope is research discovery, evaluation, acquisition, and document processing only.**
+QuantForge is being implemented incrementally. The Research Phase (M0–M11) is complete. **The current scope is Strategy Engineering only — extracting structured Strategy Specifications from Research Document Packages.**
 
 Agents may implement the following:
 
-- Project setup, packaging, configuration, and logging.
-- Research metadata models and database persistence.
-- arXiv, OpenAlex, Crossref, and permitted SSRN discovery workflows.
-- Metadata normalization and deduplication.
-- Candidate filtering, scoring, and ranking.
-- Selective LLM-assisted research evaluation.
-- Centralized LLM usage and budget controls.
-- Permitted paper acquisition and PDF validation.
-- PDF text and section processing.
-- Research Document Packages.
-- Research pipeline state tracking and orchestration.
-- CLI commands, research reports, tests, and documentation for these capabilities.
+- Strategy Specification data models and database persistence.
+- Three-call LLM extraction pipeline (section routing, pillar extraction, validation).
+- Spec writer service and post-extraction provenance validation.
+- Review workflow and status transitions.
+- Variant management for `quantforge_added` rules.
+- CLI commands for extraction, review, variants, status, and reports.
+- Prompt templates under `llm/prompts/strategy/`.
+- Strategy configuration (`config/strategy.json`).
+- Tests and documentation for all of the above.
+
+All existing Research Phase services (connectors, acquisition, PDF processing, budget manager, repository layer) are available and should be used as-is. Do not modify them unless a bug fix is explicitly required.
 
 ### Out of scope unless explicitly approved in a later phase
 
 Do not implement these merely because they are part of QuantForge's long-term vision:
 
-- Strategy extraction into complete trading systems.
-- Strategy execution or signal-generation engines.
-- Market-data ingestion for backtesting.
-- Backtesting engines.
+- Backtesting engine or market data ingestion.
 - Position sizing, portfolio simulation, or trade execution engines.
-- Strategy optimization or robustness testing engines.
+- Strategy optimization or robustness testing.
 - Paper trading.
 - Broker or exchange integrations.
 - Live trading or autonomous trading agents.
 - Dashboard development.
 - MCP server/tool exposure.
 - Unrequested machine-learning components.
+- Any modification to the Research Phase pipeline beyond explicit bug fixes.
 
-If a task appears to require a future-phase component, explain the dependency and propose a research-phase-compatible interface or defer it. Do not silently expand scope.
+If a task appears to require a future-phase component, explain the dependency and defer it. Do not silently expand scope.
 
 ## 3. Preserve the Research and Trading Architecture
 
@@ -228,4 +225,8 @@ A task is complete only when:
 
 ## 14. Current Agent Instruction
 
-**Work on the current Research Phase only.** Start from the next incomplete milestone in `ROADMAP.md`, respect its dependencies and exit criteria, and do not begin future trading-system phases without explicit approval.
+**Work on the Strategy Engineering Phase only.** The Research Phase is complete.
+
+Start from the next incomplete milestone in `ROADMAP_STRATEGY_ENGINEERING.md`. Read `STRATEGY_SCHEMA.md` before implementing any extraction, model, or spec writer code — it is the authoritative definition of the output format.
+
+Respect milestone dependencies and exit criteria. Do not begin backtesting or any other future phase without explicit approval.
