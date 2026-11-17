@@ -294,6 +294,60 @@ reviewer_notes:     Human reviewer's comments, if reviewed.
 
 LLM-assisted extraction must be reviewed by a human before status moves to `approved`.
 
+### 9.1 Extraction Audit Block
+
+Every LLM-assisted extraction must write an `extraction_audit` block alongside the spec. This provides a complete, cheap-to-produce audit trail for debugging and prompt improvement.
+
+```json
+"extraction_audit": {
+  "routing_map": {
+    "entry_signal":    [3, 4],
+    "exit":            [4, 7],
+    "market_regime":   [2],
+    "position_sizing": [5],
+    "risk_management": [5, 6],
+    "asset_selection": [3],
+    "portfolio":       [8],
+    "backtesting":     [9]
+  },
+  "sections_used":    [2, 3, 4, 5, 6, 7, 8, 9],
+  "sections_skipped": [1, 10],
+  "sections_filtered_too_short": [11, 12],
+  "total_input_tokens": 8420,
+  "total_output_tokens": 1150,
+  "extraction_date":  "2026-11-16T14:23:00Z"
+}
+```
+
+**Fields:**
+
+| Field | Description |
+|---|---|
+| `routing_map` | Pillar → list of section indices returned by Call 1. |
+| `sections_used` | Union of all section indices actually sent to Call 2. |
+| `sections_skipped` | Sections the router did not assign to any pillar. |
+| `sections_filtered_too_short` | Sections excluded by the minimum character filter before routing (see Section 9.2). |
+| `total_input_tokens` | Sum of input tokens across all three calls. |
+| `total_output_tokens` | Sum of output tokens across all three calls. |
+| `extraction_date` | ISO 8601 timestamp when extraction completed. |
+
+When a human reviewer asks "where did this entry rule come from?", the `routing_map` shows which sections the LLM received for that pillar, and the `source_ref` on the rule object points to the specific location within those sections.
+
+### 9.2 Section Quality Filter
+
+Before the routing call (Call 1), filter `sections.json` to exclude entries that are almost certainly false positives from the section detector.
+
+**Rule:** Only pass sections with `len(content) >= min_section_chars` to the router.
+
+**Default:** `min_section_chars = 200` (configurable in `config/strategy.json`).
+
+**What this removes:** Table-of-contents entries, page headers, isolated figure captions, stray lines, and other artefacts that the heading detector picks up but that contain no extractable rules.
+
+**What to do with excluded sections:**
+- Record their indices in `extraction_audit.sections_filtered_too_short`.
+- Do not send them to the router.
+- If *all* sections are filtered (i.e., `sections.json` is entirely noise), fall back to chunking `text.txt` and log a warning.
+
 ---
 
 ## 10. Variants
@@ -336,6 +390,18 @@ A specification moves through these statuses:
 6. The methodology assessment is consistent with the extracted content.
 
 If any of these fail, status goes to `rejected` with reviewer notes explaining what needs to be corrected.
+
+### Review Output Options
+
+The `quantforge strategy review show <id>` command supports `--output-file <path>` to write a formatted Markdown review sheet. This is strongly recommended for specs with more than 20 rules across multiple pillars — reviewing a 50-rule spec across 9 pillars in a terminal is impractical.
+
+The Markdown review sheet includes:
+- Completeness classification and component coverage table.
+- All rules, grouped by pillar, with provenance labels highlighted.
+- Flagged items (missing evidence on `inferred` rules, `quantforge_added` in base spec, missing source refs).
+- Missing component records.
+- Methodology assessment.
+- Extraction audit summary (token usage, sections used/skipped).
 
 ---
 

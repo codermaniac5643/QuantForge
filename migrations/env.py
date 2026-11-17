@@ -9,6 +9,7 @@ from quantforge.database.base import Base
 
 # Import all models so Alembic can see them for autogenerate
 import quantforge.database.models.paper  # noqa: F401
+import quantforge.database.models.strategy  # noqa: F401
 
 config = context.config
 

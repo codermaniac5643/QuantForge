@@ -27,3 +27,11 @@ logs/
 
 # OS
 .DS_Store
+
+# Artifacts
+STRATEGY_SCHEMA.md
+ROADMAP_STRATEGY_ENGINEERING.md
+STRATEGY_PROGRESS.md
+DATA_MODEL.md
+
+AI_Agents/

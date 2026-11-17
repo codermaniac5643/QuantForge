@@ -57,19 +57,19 @@ Define the data structures and persistence layer for Strategy Specifications bef
 
 ### Tasks
 
-- [ ] Define the `StrategySpecification` Pydantic model matching `STRATEGY_SCHEMA.md`.
-- [ ] Define the `RuleObject` model with required and optional fields as per the schema.
-- [ ] Define the `MissingComponent` model.
-- [ ] Define the `MethodologyAssessment` model.
-- [ ] Define the `StrategyVariant` model.
-- [ ] Define strategy status enum: `draft | under_review | approved | rejected | superseded`.
-- [ ] Define completeness classification enum from the schema.
-- [ ] Define provenance label enum: `explicit | inferred | quantforge_added`.
-- [ ] Add `strategy_specifications` table migration.
-- [ ] Add repository operations: create, get by paper_id, update status, list by status, list by paper.
-- [ ] Add uniqueness constraint: one base spec per paper per version.
-- [ ] Add tests for models, state transitions, and repository operations.
-- [ ] Update `DATA_MODEL.md` with the new table and relationships.
+- [x] Define the `StrategySpecification` Pydantic model matching `STRATEGY_SCHEMA.md`.
+- [x] Define the `RuleObject` model with required and optional fields as per the schema.
+- [x] Define the `MissingComponent` model.
+- [x] Define the `MethodologyAssessment` model.
+- [x] Define the `StrategyVariant` model.
+- [x] Define strategy status enum: `draft | under_review | approved | rejected | superseded`.
+- [x] Define completeness classification enum from the schema.
+- [x] Define provenance label enum: `explicit | inferred | quantforge_added`.
+- [x] Add `strategy_specifications` table migration.
+- [x] Add repository operations: create, get by paper_id, update status, list by status, list by paper.
+- [x] Add uniqueness constraint: one base spec per paper per version.
+- [x] Add tests for models, state transitions, and repository operations.
+- [x] Update `DATA_MODEL.md` with the new table and relationships.
 
 ### New database table
 
@@ -119,15 +119,19 @@ Build the three-call LLM extraction pipeline that produces raw rule objects from
 - [ ] Implement Call 3 — Validation and Assessment.
   - Input: all extracted rule objects + missing component list from Call 1.
   - Output: completeness classification, methodology assessment, flagged rules.
+  - **Cross-pillar leakage check:** Call 3 must explicitly check for rules that belong in one pillar but were placed in another (e.g. exit rules inside the entry pillar, sizing rules inside risk management). Flag each leakage case with the pillar it should move to.
   - Token budget: configurable, default 3,000.
 - [ ] Add fallback: if `sections.json` has no headings, chunk `text.txt` with a logged warning.
+- [ ] Add section quality filter: before the routing call, exclude sections whose `content` length is below `min_section_chars` (configurable in `config/strategy.json`, default 200). Record excluded section indices in the extraction audit. If all sections are filtered, fall back to `text.txt` chunking and log a warning. See `STRATEGY_SCHEMA.md` Section 9.2.
+- [ ] Write excluded section indices to `extraction_audit.sections_filtered_too_short`.
 - [ ] Add section size guard: if a section exceeds the token budget, split it and merge results.
 - [ ] Route all calls through the existing LLM service and budget manager.
 - [ ] Handle malformed JSON responses: retry once, then mark as `extraction_failed`.
 - [ ] Handle mid-paper budget exhaustion: save partial spec as draft, record which pillars completed.
 - [ ] Add prompt templates for all three calls under `llm/prompts/strategy/`.
 - [ ] Add worked example from `STRATEGY_SCHEMA.md` Section 14 to the extraction prompts.
-- [ ] Add `strategy_extraction` section to `config/llm.yaml` with per-call token budgets and total per-paper budget.
+- [ ] Add `strategy_extraction` section to `config/llm.json` under a `strategy_extraction` key with per-call token budgets and total per-paper budget. Do **not** put model selection in `config/strategy.json` — keep it in `config/llm.json` consistent with the research phase. `config/strategy.json` holds extraction behaviour (token budgets, section filter thresholds, fallback flags) only.
+- [ ] Add `extraction_audit` block to every spec file — routing map, sections used/skipped/filtered, total token counts, extraction date. See `STRATEGY_SCHEMA.md` Section 9.1.
 - [ ] Add unit tests with mocked LLM responses for all three calls.
 - [ ] Add tests for fallback, section splitting, budget exhaustion, and malformed response handling.
 
@@ -204,7 +208,7 @@ Allow a human reviewer to inspect, approve, or reject a spec through the CLI. No
 - [ ] Implement `get_spec_review_summary(strategy_id)` — returns the spec with flagged rules highlighted.
 - [ ] Add CLI commands:
   - `quantforge strategy review list` — show all specs pending review.
-  - `quantforge strategy review show <strategy_id>` — display spec with flagged items.
+  - `quantforge strategy review show <strategy_id>` — display spec with flagged items. Supports `--output-file <path>` to write a formatted Markdown review sheet (strongly recommended for specs with more than ~20 rules).
   - `quantforge strategy review approve <strategy_id>` — approve after checklist confirmation.
   - `quantforge strategy review reject <strategy_id>` — reject with required notes.
 - [ ] Auto-transition spec status from `draft` to `under_review` when extraction completes without errors.
@@ -373,8 +377,8 @@ Add `config/strategy.json`:
 ```json
 {
   "extraction": {
-    "model": "claude-sonnet-4-6",
     "per_paper_budget_tokens": 20000,
+    "min_section_chars": 200,
     "calls": {
       "routing": {
         "max_tokens": 1000
@@ -393,6 +397,17 @@ Add `config/strategy.json`:
     "require_human_approval": true,
     "auto_transition_to_under_review": true
   }
+}
+```
+
+> **Note:** Model selection (`model`) is NOT in `config/strategy.json`. It lives in `config/llm.json` under a `strategy_extraction` key, consistent with how the research phase handles LLM configuration. If you upgrade the model, there is one place to change it.
+
+Add `strategy_extraction` block to `config/llm.json`:
+
+```json
+"strategy_extraction": {
+  "model": "anthropic/claude-sonnet-4-5",
+  "enabled": true
 }
 ```
 
@@ -421,3 +436,6 @@ Add `config/strategy.json`:
 ### Next action
 
 Complete Research Phase Milestones 9–11. Once the Research Phase Completion Gate in Milestone 11 is passed, begin **Milestone 12 — Strategy Data Models and Database**.
+
+> **Pre-phase corpus seeding (do before Milestone 12):**
+> The phase gate requires 5 approved strategy specs, which means 5 papers must reach `PROCESSED` state with high enough scores. Given the current arXiv search returning off-topic results at low scores, do not rely on the discovery pipeline alone to populate the corpus. Before starting Milestone 12, manually run the pipeline with 10–15 targeted momentum and mean-reversion papers, manually approve the best 5–6 via `quantforge research acquire --paper-id <id>` and `quantforge research process`, and start Strategy Engineering with a known-good corpus. This avoids spending LLM budget on papers that will be rejected at review.
