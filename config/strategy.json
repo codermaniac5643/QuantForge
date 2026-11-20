@@ -1,0 +1,34 @@
+{
+    "extraction": {
+        "min_section_chars": 200,
+        "max_section_tokens": 1500,
+        "fallback_to_full_text": true,
+        "full_text_chunk_size_chars": 6000,
+        "full_text_chunk_overlap_chars": 200
+    },
+    "token_budgets": {
+        "per_paper_total": 20000,
+        "routing_call": 1000,
+        "extraction_per_group": 6000,
+        "validation_call": 3000
+    },
+    "pillar_groups": {
+        "entry_exit_regime": [
+            "market_regime",
+            "market_eligibility",
+            "entry_signal",
+            "exit"
+        ],
+        "sizing_risk_portfolio": [
+            "position_sizing",
+            "risk_management",
+            "portfolio"
+        ],
+        "asset_selection": [
+            "asset_selection"
+        ],
+        "backtesting": [
+            "backtesting"
+        ]
+    }
+}

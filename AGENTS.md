@@ -1,232 +1,189 @@
 # QuantForge — Agent Instructions
 
-**Document:** `AGENTS.md`  
-**Project:** QuantForge  
-**Applies to:** All coding agents working in this repository  
-**Current implementation scope:** Strategy Engineering phase (Phase 2)
+**Document:** `AGENTS.md`
+**Phase:** Strategy Engineering (Phase 2)
+**Research Phase:** Complete (M0–M11, 511 tests passing)
 
 ---
 
-## 1. Read the Project Documents First
+## 1. Read First
 
-Before planning or modifying code, read:
+Before writing any code:
 
-1. `PROJECT_SPEC.md` — project intent, principles, research requirements, and scope.
-2. `ROADMAP.md` — current milestones, tasks, and acceptance criteria.
-3. Any relevant architecture, data-model, schema, or decision documents that exist.
-4. The relevant source code and tests before editing an existing component.
+1. `PROJECT_SPEC.md` — intent, principles, scope.
+2. `ROADMAP_STRATEGY_ENGINEERING.md` — current milestones and exit criteria.
+3. `STRATEGY_SCHEMA.md` — authoritative output format for all extraction work.
+4. Relevant source code before editing any existing component.
 
-Do not assume that a task mentioned in a future phase is currently authorized for implementation.
+---
 
-## 2. Current Scope: Strategy Engineering Phase
+## 2. Current Scope
 
-QuantForge is being implemented incrementally. The Research Phase (M0–M11) is complete. **The current scope is Strategy Engineering only — extracting structured Strategy Specifications from Research Document Packages.**
+**Strategy Engineering only.** Extract structured Strategy Specifications from Research Document Packages.
 
-Agents may implement the following:
-
-- Strategy Specification data models and database persistence.
-- Three-call LLM extraction pipeline (section routing, pillar extraction, validation).
-- Spec writer service and post-extraction provenance validation.
+**Allowed:**
+- Strategy Specification models and DB persistence.
+- Three-call LLM extraction pipeline (routing → extraction → validation).
+- Section quality filter (`min_section_chars = 200`) and extraction audit block.
+- Spec writer and post-extraction provenance checks.
 - Review workflow and status transitions.
 - Variant management for `quantforge_added` rules.
-- CLI commands for extraction, review, variants, status, and reports.
-- Prompt templates under `llm/prompts/strategy/`.
-- Strategy configuration (`config/strategy.json`).
-- Tests and documentation for all of the above.
+- CLI commands, prompt templates, tests, documentation.
+- Config in `config/strategy.json`; model/token settings in `config/llm.json` under `strategy_extraction`.
 
-All existing Research Phase services (connectors, acquisition, PDF processing, budget manager, repository layer) are available and should be used as-is. Do not modify them unless a bug fix is explicitly required.
+**Research Phase services** (connectors, acquisition, PDF processing, budget manager, repository layer) are complete. Use them as-is. Only modify for an explicit bug fix.
 
-### Out of scope unless explicitly approved in a later phase
+**Not allowed:**
+- Backtesting, market data, position sizing, portfolio simulation.
+- Paper trading, broker integrations, live trading.
+- Dashboard or MCP server.
+- ML components not explicitly requested.
+- Modifications to the Research Phase pipeline without explicit justification.
 
-Do not implement these merely because they are part of QuantForge's long-term vision:
+---
 
-- Backtesting engine or market data ingestion.
-- Position sizing, portfolio simulation, or trade execution engines.
-- Strategy optimization or robustness testing.
-- Paper trading.
-- Broker or exchange integrations.
-- Live trading or autonomous trading agents.
-- Dashboard development.
-- MCP server/tool exposure.
-- Unrequested machine-learning components.
-- Any modification to the Research Phase pipeline beyond explicit bug fixes.
+## 3. Architecture Boundaries
 
-If a task appears to require a future-phase component, explain the dependency and defer it. Do not silently expand scope.
+- Strategy extraction is separate from document processing.
+- Spec writer does not call the LLM — it validates and assembles extraction output.
+- LLM calls go through the existing budget manager. Never call a provider directly.
+- Repository layer is the only DB access point.
+- Configuration is in JSON files. No hardcoded limits, model names, or paths.
+- MCP, when introduced later, exposes services — it does not contain business logic.
 
-## 3. Preserve the Research and Trading Architecture
+---
 
-Follow these boundaries:
+## 4. Extraction Rules
 
-- Research discovery is separate from paper acquisition.
-- Acquisition is separate from document processing.
-- Document processing is separate from future strategy extraction.
-- Source connectors must not own pipeline orchestration.
-- Database repositories must not contain source-specific scraping logic.
-- LLM provider code must be isolated behind a service interface.
-- MCP, when introduced later, should expose existing services rather than contain core business logic.
-- Configuration must not be scattered across modules.
-- Research metadata belongs in PostgreSQL; paper artifacts belong in the configured filesystem storage initially.
+These apply to all LLM extraction work:
 
-Keep components modular, testable, and independently replaceable.
+- **Use `sections.json` for routing.** Never send full paper text to the LLM.
+- **Filter short sections before routing.** Sections under `min_section_chars` (default 200) are skipped and recorded in `sections_filtered_too_short`, not silently dropped.
+- **Full-text fallback** triggers only when all sections are filtered. Log a warning.
+- **Three calls per paper:** routing → pillar extraction (grouped) → validation + assessment.
+- **Call 3 must check for cross-pillar leakage** — rules assigned to the wrong pillar during extraction.
+- **Write an extraction audit block** after extraction completes: routing map, sections used, sections skipped, sections filtered, token counts per call, extraction date.
+- **Prompts must instruct the LLM** to return only JSON, omit optional fields when the paper provides nothing, and not write null or placeholder values.
+- **Budget exhaustion** is a controlled stop. Save partial spec as `draft`, record which pillars completed.
 
-## 4. Research Integrity and Provenance
+---
 
-Research records and assessments must be traceable.
+## 5. Provenance — Non-Negotiable
 
-- Preserve source identifiers, source URLs, retrieval timestamps, and relevant metadata.
-- Do not fabricate missing metadata, paper content, authors, publication status, or results.
-- Distinguish metadata facts from generated evaluations.
-- Store evaluation rationale or supporting evidence when available.
-- Keep original paper files unchanged.
-- Record hashes and processing versions for acquired artifacts.
-- Preserve multiple source references when one paper is discovered in multiple sources.
-- Record failures, unavailable documents, and processing errors rather than silently dropping records.
-- Respect access restrictions and use only permitted acquisition methods.
+Every rule carries one label: `explicit`, `inferred`, or `quantforge_added`.
 
-For later strategy-related work, the project specification requires explicit separation between **paper-explicit**, **inferred**, and **QuantForge-added** rules. Do not attribute QuantForge assumptions or enhancements to an original paper.
+- `inferred` rules require an `evidence` field. No exceptions.
+- `quantforge_added` rules must never appear in a base spec. Variants only.
+- Post-extraction checks enforce this before any spec is written to disk. A violation raises an error — it is never silently saved.
 
-## 5. LLM Usage and Cost Controls
+---
 
-All LLM calls must go through the centralized LLM service and budget manager.
+## 6. LLM and Cost Controls
 
-Agents must not:
+- All calls go through the budget manager. No direct provider calls.
+- No hardcoded API keys or secrets.
+- No automatic credit recharge.
+- No indefinite retries.
+- Mock LLM responses in all routine tests. Real calls are opt-in only.
+- Use deterministic Python for anything that does not require language understanding.
 
-- Call a provider directly from research modules.
-- Hardcode API keys or secrets.
-- Add automatic credit recharge.
-- Bypass budget reservations or usage logging.
-- Retry indefinitely.
-- Send entire papers when a smaller relevant excerpt is sufficient.
-- Use an LLM for deterministic calculations or operations better handled by Python.
+---
 
-Agents should:
+## 7. Code Standards
 
-- Use LLMs only when language understanding or reasoning adds value.
-- Prefer deterministic filtering, normalization, deduplication, and scoring where practical.
-- Respect configured model, token, call, concurrency, and budget limits.
-- Handle budget exhaustion as a controlled stop condition.
-- Use mocked LLM responses in routine tests.
-- Make real provider tests opt-in and clearly documented.
+- Typed, modular Python. Type hints on all public functions.
+- Pydantic for all models and config validation.
+- Focused functions. No unnecessary abstraction.
+- No global mutable state.
+- Explicit exceptions with useful messages. No silent suppression.
+- Context managers for resources.
+- No placeholder implementations, dead code, unexplained TODOs, or unused dependencies.
+- No new dependency without explaining why it is needed.
 
-## 6. Python and Code Quality Standards
+---
 
-- Use the project's configured Python version and dependency manager.
-- Prefer clear, typed, modular Python code.
-- Use type hints for public functions and important data structures.
-- Use Pydantic for validated external/configuration data where appropriate.
-- Keep functions focused and avoid unnecessary abstraction.
-- Avoid global mutable state.
-- Use explicit exceptions and useful error messages.
-- Do not suppress exceptions without recording or handling them.
-- Use context managers for resources.
-- Avoid unnecessary dependencies.
-- Do not introduce a framework or library without explaining why it is needed.
-- Follow the existing style and naming conventions.
-- Do not create placeholder implementations that appear complete.
-- Do not leave dead code, unexplained TODOs, or unused dependencies.
+## 8. Configuration
 
-## 7. Configuration and Secrets
+- Adjustable settings in `config/strategy.json` (extraction budgets, filters) and `config/llm.json` (model, token limits under `strategy_extraction`).
+- Credentials in environment variables or approved secrets mechanism.
+- Never commit `.env`, keys, tokens, or passwords.
+- Validate config at startup with clear error messages.
 
-- Put adjustable research settings in configuration files.
-- Keep credentials and secrets in environment variables or an approved secret mechanism.
-- Never commit `.env`, API keys, tokens, passwords, or private credentials.
-- Maintain `.env.example` with placeholder values only.
-- Validate configuration at startup.
-- Provide safe defaults and clear validation errors.
-- Do not hardcode weekly/monthly acquisition limits, model names, paths, or token limits where they are intended to be configurable.
+---
 
-## 8. Database and Filesystem Rules
+## 9. Database and Filesystem
 
-- Use the database repository layer for persistence.
-- Use migrations for schema changes.
-- Do not modify database schema without updating migrations and relevant documentation.
-- Use transactions for operations that must remain consistent.
-- Define uniqueness constraints where needed to protect against duplicate records.
-- Avoid storing large PDF or text artifacts directly in PostgreSQL unless explicitly approved.
-- Store artifact paths and metadata in the database.
-- Use safe temporary files and atomic placement for downloads.
-- Do not delete research artifacts or database records without an explicit requirement.
-- Ensure rerunning a pipeline stage does not unnecessarily duplicate records or files.
+- Use the repository layer for all DB access.
+- Use Alembic migrations for schema changes. Update `DATA_MODEL.md`.
+- Use transactions where consistency is required.
+- Uniqueness constraints on all records where duplicates would be a problem.
+- Spec JSON files on filesystem; paths and metadata in DB.
+- Rerunning extraction must not duplicate records or overwrite an approved spec without incrementing the version.
 
-## 9. Testing Requirements
+---
 
-Every meaningful change should include appropriate tests.
+## 10. Testing
 
-- **Unit tests:** models, normalization, filters, scoring, state transitions, utilities.
-- **Integration tests:** database repositories, connectors, acquisition, processing, and pipeline behavior.
-- **Fixtures:** use stable sample responses and test documents.
-- **External services:** mock by default.
-- **Real API tests:** opt-in, limited, and clearly separated from normal test runs.
-- **LLM tests:** mock responses for routine tests; real calls only when explicitly enabled.
-- **Failure tests:** cover rate limits, timeouts, malformed responses, missing files, invalid PDFs, and budget exhaustion where relevant.
+Every meaningful change includes tests.
 
-Do not mark a task complete merely because its happy path works.
+- **Unit:** models, provenance checks, section filter, extraction grouping, spec assembly, state transitions.
+- **Integration:** DB repository, extraction pipeline end-to-end, review workflow.
+- **Fixtures:** stable mocked LLM responses and sample `sections.json` files.
+- **Failure cases:** malformed LLM JSON, budget exhaustion mid-paper, all sections filtered, missing `sections.json`.
+- **Real LLM calls:** opt-in, clearly separated, never run by default.
 
-## 10. Documentation and Roadmap Discipline
+Do not mark a task complete because the happy path works.
 
-When implementing a milestone:
+---
 
-1. Identify the relevant milestone and acceptance criteria in `ROADMAP.md`.
-2. Confirm dependencies and current repository state.
-3. Implement only the necessary scope.
-4. Add or update tests.
-5. Update documentation and configuration examples.
-6. Report what changed and how it was verified.
-7. Update roadmap checkboxes only when the work and tests satisfy the stated criteria.
+## 11. Review Workflow Requirements
 
-Keep documentation accurate:
+A spec cannot reach `approved` without a human confirming:
 
-- Update `PROJECT_SPEC.md` when agreed project scope or principles change.
-- Update `ROADMAP.md` when milestones, tasks, dependencies, or acceptance criteria change.
-- Add detailed technical documents when needed rather than overloading the main specification.
-- Record significant architectural decisions and their rationale in `DECISIONS.md` when that file is introduced.
+1. Every rule has a provenance label.
+2. Every `inferred` rule has evidence.
+3. No `quantforge_added` rule in the base spec.
+4. Missing pillars are recorded, not skipped.
+5. Completeness classification matches actual coverage.
+6. Assessment is consistent with extracted content.
 
-Do not mark work complete based solely on code generation or file creation.
+`quantforge strategy review show <id>` must support `--output-file` for specs with many rules, writing a Markdown review sheet to disk.
 
-## 11. Git and Change Safety
+---
 
-- Inspect the working tree before making changes.
-- Do not overwrite unrelated user changes.
-- Do not delete files or data without explicit justification.
-- Keep changes focused on the requested task or milestone.
-- Avoid committing generated PDFs, research-library artifacts, logs, caches, or secrets.
-- Do not create a commit unless requested.
-- Explain migrations or potentially destructive operations before running them.
-- Do not claim commands or tests passed unless they were actually executed.
+## 12. Workflow Per Task
 
-## 12. Agent Workflow for Each Task
+1. **Read** — project documents and existing code for the affected area.
+2. **Scope** — identify the milestone, what is in and out of scope.
+3. **Plan** — propose a short implementation plan before writing code for non-trivial changes.
+4. **Implement** — smallest coherent change that satisfies the task.
+5. **Test** — run tests, report any not run.
+6. **Review** — correctness, provenance, config, scope.
+7. **Document** — update roadmap checkboxes and relevant docs.
+8. **Report** — files changed, behavior added, test results, remaining issues.
 
-For each coding task, follow this workflow:
+Ask before making a consequential architectural choice not covered by project documents.
 
-1. **Understand:** Read relevant project documents and inspect existing code.
-2. **Scope:** Identify the milestone, requirements, dependencies, and out-of-scope items.
-3. **Plan:** Propose a short implementation plan for non-trivial changes.
-4. **Implement:** Make the smallest coherent change that satisfies the task.
-5. **Test:** Run relevant tests and report any tests not run.
-6. **Review:** Check correctness, security, configuration, and scope.
-7. **Document:** Update relevant documentation and roadmap progress.
-8. **Report:** Summarize files changed, behavior added, test results, and remaining issues.
-
-Ask for clarification before making a consequential architectural choice that is not covered by the project documents. For minor implementation choices, follow existing conventions and document the decision when useful.
+---
 
 ## 13. Definition of Done
 
 A task is complete only when:
 
-- Its requested behavior is implemented.
-- Relevant tests pass, or unrun tests are explicitly reported.
-- Error paths and configuration are handled appropriately.
-- No secrets or unrelated files were introduced.
-- Documentation is updated where needed.
-- The implementation remains within the current research-phase scope.
-- The agent reports the actual changes and verification results.
+- Requested behavior is implemented.
+- Tests pass, or unrun tests are explicitly reported.
+- Error paths and config are handled.
+- No secrets or unrelated files introduced.
+- Docs updated where needed.
+- Scope stays within Strategy Engineering.
+- Actual changes and verification results are reported.
 
 ---
 
-## 14. Current Agent Instruction
+## 14. Current Instruction
 
-**Work on the Strategy Engineering Phase only.** The Research Phase is complete.
+**Work on Strategy Engineering only.**
 
-Start from the next incomplete milestone in `ROADMAP_STRATEGY_ENGINEERING.md`. Read `STRATEGY_SCHEMA.md` before implementing any extraction, model, or spec writer code — it is the authoritative definition of the output format.
-
-Respect milestone dependencies and exit criteria. Do not begin backtesting or any other future phase without explicit approval.
+Read `STRATEGY_SCHEMA.md` before touching any extraction, model, or spec writer code.
+Start from the next incomplete milestone in `ROADMAP_STRATEGY_ENGINEERING.md`.
+Do not begin backtesting or any future phase without explicit approval.

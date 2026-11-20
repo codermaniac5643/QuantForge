@@ -107,33 +107,35 @@ Build the three-call LLM extraction pipeline that produces raw rule objects from
 
 ### Tasks
 
-- [ ] Implement Call 1 — Section Router.
+- [x] Implement Call 1 — Section Router.
   - Input: section titles from `sections.json` + abstract from `metadata.json`.
   - Output: mapping of pillar names to relevant section indices, plus `not_found` list.
   - Token budget: configurable, default 1,000.
-- [ ] Implement Call 2 — Pillar Extractor.
+- [x] Implement Call 2 — Pillar Extractor.
   - Group pillars into logical extraction groups (Entry/Exit/Regime, Sizing/Risk/Portfolio, Asset Selection, Backtesting).
   - Send only sections identified by the router.
   - Output: structured rule objects per pillar matching the schema.
   - Token budget per group: configurable, default 6,000.
-- [ ] Implement Call 3 — Validation and Assessment.
+- [x] Implement Call 3 — Validation and Assessment.
   - Input: all extracted rule objects + missing component list from Call 1.
   - Output: completeness classification, methodology assessment, flagged rules.
   - **Cross-pillar leakage check:** Call 3 must explicitly check for rules that belong in one pillar but were placed in another (e.g. exit rules inside the entry pillar, sizing rules inside risk management). Flag each leakage case with the pillar it should move to.
   - Token budget: configurable, default 3,000.
-- [ ] Add fallback: if `sections.json` has no headings, chunk `text.txt` with a logged warning.
-- [ ] Add section quality filter: before the routing call, exclude sections whose `content` length is below `min_section_chars` (configurable in `config/strategy.json`, default 200). Record excluded section indices in the extraction audit. If all sections are filtered, fall back to `text.txt` chunking and log a warning. See `STRATEGY_SCHEMA.md` Section 9.2.
-- [ ] Write excluded section indices to `extraction_audit.sections_filtered_too_short`.
-- [ ] Add section size guard: if a section exceeds the token budget, split it and merge results.
-- [ ] Route all calls through the existing LLM service and budget manager.
-- [ ] Handle malformed JSON responses: retry once, then mark as `extraction_failed`.
-- [ ] Handle mid-paper budget exhaustion: save partial spec as draft, record which pillars completed.
-- [ ] Add prompt templates for all three calls under `llm/prompts/strategy/`.
-- [ ] Add worked example from `STRATEGY_SCHEMA.md` Section 14 to the extraction prompts.
-- [ ] Add `strategy_extraction` section to `config/llm.json` under a `strategy_extraction` key with per-call token budgets and total per-paper budget. Do **not** put model selection in `config/strategy.json` — keep it in `config/llm.json` consistent with the research phase. `config/strategy.json` holds extraction behaviour (token budgets, section filter thresholds, fallback flags) only.
-- [ ] Add `extraction_audit` block to every spec file — routing map, sections used/skipped/filtered, total token counts, extraction date. See `STRATEGY_SCHEMA.md` Section 9.1.
-- [ ] Add unit tests with mocked LLM responses for all three calls.
-- [ ] Add tests for fallback, section splitting, budget exhaustion, and malformed response handling.
+- [x] Add fallback: if `sections.json` has no headings, chunk `text.txt` with a logged warning.
+- [x] Add section quality filter: before the routing call, exclude sections whose `content` length is below `min_section_chars` (configurable in `config/strategy.json`, default 200). Record excluded section indices in the extraction audit. If all sections are filtered, fall back to `text.txt` chunking and log a warning. See `STRATEGY_SCHEMA.md` Section 9.2.
+- [x] Write excluded section indices to `extraction_audit.sections_filtered_too_short`.
+- [x] Add formula quality detection to section preprocessing: before routing, scan each section's content for likely formula regions (high density of brackets, operators, LaTeX remnants, or special characters). Record per section in the extraction audit as `formula_quality: clean | degraded | missing`. Pass this signal alongside section content in Call 2 so the prompt can apply appropriate provenance conservatism.
+- [x] Write per-section `formula_quality` values to `extraction_audit`.
+- [x] Add section size guard: if a section exceeds the token budget, split it and merge results.
+- [x] Route all calls through the existing LLM service and budget manager.
+- [x] Handle malformed JSON responses: retry once, then mark as `extraction_failed`.
+- [x] Handle mid-paper budget exhaustion: save partial spec as draft, record which pillars completed.
+- [x] Add prompt templates for all three calls under `llm/prompts/strategy/`.
+- [x] Add worked example from `STRATEGY_SCHEMA.md` Section 14 to the extraction prompts.
+- [x] Add `strategy_extraction` section to `config/llm.json` under a `strategy_extraction` key with per-call token budgets and total per-paper budget. Do **not** put model selection in `config/strategy.json` — keep it in `config/llm.json` consistent with the research phase. `config/strategy.json` holds extraction behaviour (token budgets, section filter thresholds, fallback flags) only.
+- [x] Add `extraction_audit` block to every spec file — routing map, sections used/skipped/filtered, total token counts, extraction date. See `STRATEGY_SCHEMA.md` Section 9.1.
+- [x] Add unit tests with mocked LLM responses for all three calls.
+- [x] Add tests for fallback, section splitting, budget exhaustion, and malformed response handling.
 
 ### Prompt design requirements
 
@@ -141,6 +143,10 @@ Build the three-call LLM extraction pipeline that produces raw rule objects from
 - Call 2 prompt must include the relevant pillar definitions from the schema and the worked example.
 - Call 2 prompt must instruct the LLM to omit optional rule fields when the paper provides nothing for them — not to write null or placeholder values.
 - Call 3 prompt must instruct the LLM to flag any rule labeled `explicit` that lacks a clear source reference.
+- Call 2 prompt must instruct the LLM:
+  - If a formula appears garbled or incomplete (missing subscripts, broken symbols, LaTeX remnants), mark the rule `inferred` and describe what was unclear in `evidence`.
+  - Never reconstruct a formula beyond what the text clearly supports.
+  - If a formula region is entirely missing or blank, omit the `formula` field entirely and add a note in `notes`. Do not attempt to reconstruct from surrounding prose alone.
 
 ### Deliverables
 
@@ -162,7 +168,7 @@ Take the raw output from the extraction service and write a valid, complete spec
 
 ### Tasks
 
-- [ ] Implement the spec writer service.
+- [x] Implement the spec writer service.
   - Validate all rule objects against the `RuleObject` model.
   - Check all required fields are present on every rule.
   - Assign `rule_id` values if not already assigned.
@@ -172,14 +178,14 @@ Take the raw output from the extraction service and write a valid, complete spec
   - Serialize to JSON and write to `research_library/<paper_id>/strategy/spec_v<N>.json`.
   - Create the `strategy/` subdirectory if it does not exist.
   - Write DB record with status `draft`.
-- [ ] Implement version incrementing: if a spec already exists for this paper, increment version and supersede the previous one.
-- [ ] Implement extraction metadata block: method, date, extractor notes.
-- [ ] Add a deterministic post-extraction check:
+- [x] Implement version incrementing: if a spec already exists for this paper, increment version and supersede the previous one.
+- [x] Implement extraction metadata block: method, date, extractor notes.
+- [x] Add a deterministic post-extraction check:
   - Every rule has a provenance label.
   - Every `inferred` rule has an `evidence` field.
   - No `quantforge_added` rule appears in the base spec.
   - Raise a clear error if any check fails — do not silently save a broken spec.
-- [ ] Add tests for spec assembly, file writing, version incrementing, and all post-extraction checks.
+- [x] Add tests for spec assembly, file writing, version incrementing, and all post-extraction checks.
 
 ### Deliverables
 
