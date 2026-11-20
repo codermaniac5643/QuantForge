@@ -239,19 +239,19 @@ Allow `quantforge_added` rules to be tracked in named variants that extend the b
 
 ### Tasks
 
-- [ ] Implement variant creation from an approved base spec.
+- [x] Implement variant creation from an approved base spec.
   - Variant inherits all rules from the base.
   - Only `quantforge_added` rules may be added in a variant.
   - Variant records `based_on` strategy_id and version.
-- [ ] Implement variant serialization to `strategy/variants/<variant_id>_v<N>.json`.
-- [ ] Add DB support for variant records (variant field on `strategy_specifications`).
-- [ ] Implement `list_variants(paper_id)` — returns all variants for a paper.
-- [ ] Implement `get_variant(strategy_id, variant_id)`.
-- [ ] Add CLI commands:
+- [x] Implement variant serialization to `strategy/variants/<variant_id>_v<N>.json`.
+- [x] Add DB support for variant records (variant field on `strategy_specifications`).
+- [x] Implement `list_variants(paper_id)` — returns all variants for a paper.
+- [x] Implement `get_variant(strategy_id, variant_id)`.
+- [x] Add CLI commands:
   - `quantforge strategy variant create <strategy_id> <variant_name>` — create a new variant.
   - `quantforge strategy variant list <paper_id>` — list all variants.
   - `quantforge strategy variant show <strategy_id>` — display a variant with additions highlighted.
-- [ ] Add tests for variant creation, inheritance, and that base specs remain unmodified.
+- [x] Add tests for variant creation, inheritance, and that base specs remain unmodified.
 
 ### Deliverables
 
@@ -288,13 +288,13 @@ quantforge strategy report --approved         — report of all approved base sp
 
 ### Tasks
 
-- [ ] Implement `extract` command for single paper and batch mode.
-- [ ] Implement `status` command — counts by status, flagged rules count, pending reviews.
-- [ ] Implement `report` command — human-readable spec summary for one paper or all approved.
-- [ ] Support JSON output flag for all commands where useful for automation.
-- [ ] Provide clear progress and error messages during extraction.
-- [ ] Document all commands with examples in `docs/strategy_cli.md`.
-- [ ] Add tests for all CLI commands.
+- [x] Implement `extract` command for single paper and batch mode.
+- [x] Implement `status` command — counts by status, flagged rules count, pending reviews.
+- [x] Implement `report` command — human-readable spec summary for one paper or all approved.
+- [x] Support JSON output flag for all commands where useful for automation.
+- [x] Provide clear progress and error messages during extraction.
+- [x] Document all commands with examples in `docs/strategy_cli.md`.
+- [x] Add tests for all CLI commands.
 
 ### Deliverables
 

@@ -9,10 +9,18 @@ Usage:
     quantforge research process
     quantforge research status
     quantforge research report
+    quantforge strategy extract single <paper_id>
+    quantforge strategy extract batch
+    quantforge strategy status
+    quantforge strategy report <paper_id>
+    quantforge strategy report --approved
     quantforge strategy review list
     quantforge strategy review show <id>
     quantforge strategy review approve <id>
     quantforge strategy review reject <id>
+    quantforge strategy variant create <id>
+    quantforge strategy variant list <paper_id>
+    quantforge strategy variant show <id>
 """
 
 import click
@@ -24,7 +32,11 @@ from quantforge.cli.commands.ingest import ingest_cmd
 from quantforge.cli.commands.process import process_cmd
 from quantforge.cli.commands.status import status_cmd
 from quantforge.cli.commands.report import report_cmd
+from quantforge.cli.commands.strategy_extract import extract_group
+from quantforge.cli.commands.strategy_status import strategy_status_cmd
+from quantforge.cli.commands.strategy_report import strategy_report_cmd
 from quantforge.cli.commands.strategy_review import review_group
+from quantforge.cli.commands.strategy_variant import variant_group
 
 
 @click.group()
@@ -51,4 +63,8 @@ research_group.add_command(process_cmd, name="process")
 research_group.add_command(status_cmd, name="status")
 research_group.add_command(report_cmd, name="report")
 
+strategy_group.add_command(extract_group, name="extract")
+strategy_group.add_command(strategy_status_cmd, name="status")
+strategy_group.add_command(strategy_report_cmd, name="report")
 strategy_group.add_command(review_group, name="review")
+strategy_group.add_command(variant_group, name="variant")
