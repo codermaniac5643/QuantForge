@@ -207,18 +207,18 @@ Allow a human reviewer to inspect, approve, or reject a spec through the CLI. No
 
 ### Tasks
 
-- [ ] Implement review service with the six-point checklist from `STRATEGY_SCHEMA.md` Section 11.
-- [ ] Implement `approve_spec(strategy_id, reviewer_id)` — sets status to `approved`, records reviewer.
-- [ ] Implement `reject_spec(strategy_id, reviewer_id, notes)` — sets status to `rejected`, records reason.
-- [ ] Implement `list_specs_pending_review()` — returns all specs with status `under_review`.
-- [ ] Implement `get_spec_review_summary(strategy_id)` — returns the spec with flagged rules highlighted.
-- [ ] Add CLI commands:
+- [x] Implement review service with the six-point checklist from `STRATEGY_SCHEMA.md` Section 11.
+- [x] Implement `approve_spec(strategy_id, reviewer_id)` — sets status to `approved`, records reviewer.
+- [x] Implement `reject_spec(strategy_id, reviewer_id, notes)` — sets status to `rejected`, records reason.
+- [x] Implement `list_specs_pending_review()` — returns all specs with status `under_review`.
+- [x] Implement `get_spec_review_summary(strategy_id)` — returns the spec with flagged rules highlighted.
+- [x] Add CLI commands:
   - `quantforge strategy review list` — show all specs pending review.
   - `quantforge strategy review show <strategy_id>` — display spec with flagged items. Supports `--output-file <path>` to write a formatted Markdown review sheet (strongly recommended for specs with more than ~20 rules).
   - `quantforge strategy review approve <strategy_id>` — approve after checklist confirmation.
   - `quantforge strategy review reject <strategy_id>` — reject with required notes.
-- [ ] Auto-transition spec status from `draft` to `under_review` when extraction completes without errors.
-- [ ] Add tests for status transitions, checklist enforcement, and CLI commands.
+- [x] Auto-transition spec status from `draft` to `under_review` when extraction completes without errors.
+- [x] Add tests for status transitions, checklist enforcement, and CLI commands.
 
 ### Deliverables
 
